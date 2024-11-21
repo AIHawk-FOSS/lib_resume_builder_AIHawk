@@ -2,7 +2,7 @@ from pathlib import Path
 
 class GlobalConfig:
     def __init__(self):
-        # Inizialmente tutti i valori sono None
+        # Initially all values ​​are None
         self.STRINGS_MODULE_RESUME_PATH: Path = None
         self.STRINGS_MODULE_RESUME_JOB_DESCRIPTION_PATH: Path = None
         self.STRINGS_MODULE_NAME: str = None
@@ -26,5 +26,5 @@ class GlobalConfig:
                             </html>
                             """
 
-# Creazione dell'istanza globale
+# Creating the global instance
 global_config = GlobalConfig()

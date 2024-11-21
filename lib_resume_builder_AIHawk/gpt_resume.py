@@ -13,7 +13,8 @@ from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langchain_text_splitters import TokenTextSplitter
-from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_openai.embeddings import OpenAIEmbeddings
+
 from langchain_community.vectorstores import FAISS
 from lib_resume_builder_AIHawk.config import global_config
 from dotenv import load_dotenv
@@ -25,26 +26,25 @@ import openai
 
 load_dotenv()
 
-log_folder = 'log'
+log_folder = "log"
 if not os.path.exists(log_folder):
     os.makedirs(log_folder)
 
-# Configura il file di log
-log_file = os.path.join(log_folder, 'app.log')
+# Configure the log file
+log_file = os.path.join(log_folder, "app.log")
 
-# Configura il logging
+# Configure logging
 logging.basicConfig(
     level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_file, encoding='utf-8')
-    ]
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler(log_file, encoding="utf-8")],
 )
 
 logger = logging.getLogger(__name__)
 
+
 class LLMLogger:
-    
+
     def __init__(self, llm: ChatOpenAI):
         self.llm = llm
 
@@ -55,15 +55,9 @@ class LLMLogger:
             prompts = prompts.text
         elif isinstance(prompts, Dict):
             # Convert prompts to a dictionary if they are not in the expected format
-            prompts = {
-                f"prompt_{i+1}": prompt.content
-                for i, prompt in enumerate(prompts.messages)
-            }
+            prompts = {f"prompt_{i+1}": prompt.content for i, prompt in enumerate(prompts.messages)}
         else:
-            prompts = {
-                f"prompt_{i+1}": prompt.content
-                for i, prompt in enumerate(prompts.messages)
-            }
+            prompts = {f"prompt_{i+1}": prompt.content for i, prompt in enumerate(prompts.messages)}
 
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -79,9 +73,7 @@ class LLMLogger:
         completion_price_per_token = 0.0000006
 
         # Calculate the total cost of the API call
-        total_cost = (input_tokens * prompt_price_per_token) + (
-            output_tokens * completion_price_per_token
-        )
+        total_cost = (input_tokens * prompt_price_per_token) + (output_tokens * completion_price_per_token)
 
         # Create a log entry with all relevant information
         log_entry = {
@@ -106,43 +98,44 @@ class LoggerChatModel:
     def __init__(self, llm: ChatOpenAI):
         self.llm = llm
 
-
     def __call__(self, messages: List[Dict[str, str]]) -> str:
         max_retries = 15
         retry_delay = 10
 
         for attempt in range(max_retries):
             try:
-
-                reply = self.llm(messages)
+                reply = self.llm.invoke(messages)
                 parsed_reply = self.parse_llmresult(reply)
                 LLMLogger.log_request(prompts=messages, parsed_reply=parsed_reply)
                 return reply
             except (openai.RateLimitError, HTTPStatusError) as err:
                 if isinstance(err, HTTPStatusError) and err.response.status_code == 429:
-                    self.logger.warning(f"HTTP 429 Too Many Requests: Waiting for {retry_delay} seconds before retrying (Attempt {attempt + 1}/{max_retries})...")
+                    logger.warning(
+                        f"HTTP 429 Too Many Requests: Waiting for {retry_delay} seconds before retrying (Attempt {attempt + 1}/{max_retries})..."
+                    )
                     time.sleep(retry_delay)
                     retry_delay *= 2
                 else:
                     wait_time = self.parse_wait_time_from_error_message(str(err))
-                    self.logger.warning(f"Rate limit exceeded or API error. Waiting for {wait_time} seconds before retrying (Attempt {attempt + 1}/{max_retries})...")
+                    logger.warning(
+                        f"Rate limit exceeded or API error. Waiting for {wait_time} seconds before retrying (Attempt {attempt + 1}/{max_retries})..."
+                    )
                     time.sleep(wait_time)
             except Exception as e:
-                self.logger.error(f"Unexpected error occurred: {str(e)}, retrying in {retry_delay} seconds... (Attempt {attempt + 1}/{max_retries})")
+                logger.error(
+                    f"Unexpected error occurred: {str(e)}, retrying in {retry_delay} seconds... (Attempt {attempt + 1}/{max_retries})"
+                )
                 time.sleep(retry_delay)
                 retry_delay *= 2
 
-        self.logger.critical("Failed to get a response from the model after multiple attempts.")
+        logger.critical("Failed to get a response from the model after multiple attempts.")
         raise Exception("Failed to get a response from the model after multiple attempts.")
 
-
     def parse_llmresult(self, llmresult: AIMessage) -> Dict[str, Dict]:
-        # Parse the LLM result into a structured format.
         content = llmresult.content
         response_metadata = llmresult.response_metadata
         id_ = llmresult.id
         usage_metadata = llmresult.usage_metadata
-
         parsed_result = {
             "content": content,
             "response_metadata": {
@@ -160,15 +153,30 @@ class LoggerChatModel:
         }
         return parsed_result
 
+    def parse_wait_time_from_error_message(self, error_message: str) -> int:
+        # Extract wait time from error message
+        match = re.search(r"Please try again in (\d+)([smhd])", error_message)
+        if match:
+            value, unit = match.groups()
+            value = int(value)
+            if unit == "s":
+                return value
+            elif unit == "m":
+                return value * 60
+            elif unit == "h":
+                return value * 3600
+            elif unit == "d":
+                return value * 86400
+        # Default wait time if not found
+        return 30
+
 
 class LLMResumer:
-    def __init__(self, openai_api_key, strings):
-        self.llm_cheap = LoggerChatModel(
-            ChatOpenAI(
-                model_name="gpt-4o-mini", openai_api_key=openai_api_key, temperature=0.4
-            )
-        )
+    def __init__(self, openai_api_key: str, strings):
+        self.llm_cheap = LoggerChatModel(ChatOpenAI(model_name="gpt-4o-mini", openai_api_key=openai_api_key, temperature=0.4))
+        self.llm_embeddings = OpenAIEmbeddings(openai_api_key=openai_api_key)
         self.strings = strings
+        self.resume = None
 
     @staticmethod
     def _preprocess_template_string(template: str) -> str:
@@ -178,56 +186,117 @@ class LLMResumer:
     def set_resume(self, resume):
         self.resume = resume
 
-    def generate_header(self) -> str:
-        header_prompt_template = self._preprocess_template_string(
-            self.strings.prompt_header
+    def set_job_description_from_url(self, url_job_description):
+        from lib_resume_builder_AIHawk.utils import create_driver_selenium
+
+        driver = create_driver_selenium()
+        driver.get(url_job_description)
+        time.sleep(3)
+        body_element = driver.find_element("tag name", "body")
+        response = body_element.get_attribute("outerHTML")
+        driver.quit()
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".html", mode="w", encoding="utf-8") as temp_file:
+            temp_file.write(response)
+            temp_file_path = temp_file.name
+        try:
+            loader = TextLoader(temp_file_path, encoding="utf-8", autodetect_encoding=True)
+            document = loader.load()
+        finally:
+            os.remove(temp_file_path)
+        text_splitter = TokenTextSplitter(chunk_size=500, chunk_overlap=50)
+        all_splits = text_splitter.split_documents(document)
+        vectorstore = FAISS.from_documents(documents=all_splits, embedding=self.llm_embeddings)
+        prompt = PromptTemplate(
+            template="""
+            You are an expert job description analyst. Your role is to meticulously analyze and interpret job descriptions. 
+            After analyzing the job description, answer the following question in a clear, and informative manner.
+            
+            Question: {question}
+            Job Description: {context}
+            Answer:
+            """,
+            input_variables=["question", "context"],
         )
+
+        def format_docs(docs):
+            return "\n\n".join(doc.page_content for doc in docs)
+
+        context_formatter = vectorstore.as_retriever() | format_docs
+        question_passthrough = RunnablePassthrough()
+        chain_job_description = prompt | self.llm_cheap | StrOutputParser()
+        summarize_prompt_template = self._preprocess_template_string(self.strings.summarize_prompt_template)
+        prompt_summarize = ChatPromptTemplate.from_template(summarize_prompt_template)
+        chain_summarize = prompt_summarize | self.llm_cheap | StrOutputParser()
+        qa_chain = (
+            {
+                "context": context_formatter,
+                "question": question_passthrough,
+            }
+            | chain_job_description
+            | (lambda output: {"text": output})
+            | chain_summarize
+        )
+        result = qa_chain.invoke("Provide, full job description")
+        self.job_description = result
+
+    def set_job_description_from_text(self, job_description_text):
+        prompt = ChatPromptTemplate.from_template(self.strings.summarize_prompt_template)
+        chain = prompt | self.llm_cheap | StrOutputParser()
+        output = chain.invoke({"text": job_description_text})
+        self.job_description = output
+
+    def generate_header(self) -> str:
+        header_prompt_template = self._preprocess_template_string(self.strings.prompt_header)
         prompt = ChatPromptTemplate.from_template(header_prompt_template)
         chain = prompt | self.llm_cheap | StrOutputParser()
-        output = chain.invoke({
-            "personal_information": self.resume.personal_information
-        })
+        input_data = {
+            "personal_information": self.resume.personal_information,
+        }
+        if hasattr(self, "job_description"):
+            input_data["job_description"] = self.job_description
+        output = chain.invoke(input_data)
         return output
 
     def generate_education_section(self) -> str:
-        education_prompt_template = self._preprocess_template_string(
-            self.strings.prompt_education
-        )
+        education_prompt_template = self._preprocess_template_string(self.strings.prompt_education)
         prompt = ChatPromptTemplate.from_template(education_prompt_template)
         chain = prompt | self.llm_cheap | StrOutputParser()
-        output = chain.invoke({
+        input_data = {
             "education_details": self.resume.education_details,
-        })
+        }
+        if hasattr(self, "job_description"):
+            input_data["job_description"] = self.job_description
+        output = chain.invoke(input_data)
         return output
 
     def generate_work_experience_section(self) -> str:
-        work_experience_prompt_template = self._preprocess_template_string(
-            self.strings.prompt_working_experience
-        )
+        work_experience_prompt_template = self._preprocess_template_string(self.strings.prompt_working_experience)
         prompt = ChatPromptTemplate.from_template(work_experience_prompt_template)
         chain = prompt | self.llm_cheap | StrOutputParser()
-        output = chain.invoke({
-            "experience_details": self.resume.experience_details
-        })
+        input_data = {
+            "experience_details": self.resume.experience_details,
+        }
+        if hasattr(self, "job_description"):
+            input_data["job_description"] = self.job_description
+        output = chain.invoke(input_data)
         return output
 
     def generate_side_projects_section(self) -> str:
-        side_projects_prompt_template = self._preprocess_template_string(
-            self.strings.prompt_side_projects
-        )
+        side_projects_prompt_template = self._preprocess_template_string(self.strings.prompt_side_projects)
         prompt = ChatPromptTemplate.from_template(side_projects_prompt_template)
         chain = prompt | self.llm_cheap | StrOutputParser()
-        output = chain.invoke({
-            "projects": self.resume.projects
-        })
+        input_data = {
+            "projects": self.resume.projects,
+        }
+        if hasattr(self, "job_description"):
+            input_data["job_description"] = self.job_description
+        output = chain.invoke(input_data)
         return output
 
     def generate_achievements_section(self) -> str:
         logging.debug("Starting achievements section generation")
 
-        achievements_prompt_template = self._preprocess_template_string(
-            self.strings.prompt_achievements
-        )
+        achievements_prompt_template = self._preprocess_template_string(self.strings.prompt_achievements)
         logging.debug(f"Achievements template: {achievements_prompt_template}")
 
         prompt = ChatPromptTemplate.from_template(achievements_prompt_template)
@@ -238,9 +307,9 @@ class LLMResumer:
 
         input_data = {
             "achievements": self.resume.achievements,
-            "certifications": self.resume.certifications,
-            "job_description": self.job_description
         }
+        if hasattr(self, "job_description"):
+            input_data["job_description"] = self.job_description
         logging.debug(f"Input data for the chain: {input_data}")
 
         output = chain.invoke(input_data)
@@ -252,9 +321,7 @@ class LLMResumer:
     def generate_certifications_section(self) -> str:
         logging.debug("Starting Certifications section generation")
 
-        certifications_prompt_template = self._preprocess_template_string(
-            self.strings.prompt_certifications
-        )
+        certifications_prompt_template = self._preprocess_template_string(self.strings.prompt_certifications)
         logging.debug(f"Certifications template: {certifications_prompt_template}")
 
         prompt = ChatPromptTemplate.from_template(certifications_prompt_template)
@@ -265,8 +332,9 @@ class LLMResumer:
 
         input_data = {
             "certifications": self.resume.certifications,
-            "job_description": self.job_description
         }
+        if hasattr(self, "job_description"):
+            input_data["job_description"] = self.job_description
         logging.debug(f"Input data for the chain: {input_data}")
 
         output = chain.invoke(input_data)
@@ -274,16 +342,10 @@ class LLMResumer:
 
         logging.debug("Certifications section generation completed")
         return output
-    
-    
 
     def generate_additional_skills_section(self) -> str:
-        additional_skills_prompt_template = self._preprocess_template_string(
-            self.strings.prompt_additional_skills
-        )
-        
+        additional_skills_prompt_template = self._preprocess_template_string(self.strings.prompt_additional_skills)
         skills = set()
-
         if self.resume.experience_details:
             for exp in self.resume.experience_details:
                 if exp.skills_acquired:
@@ -296,49 +358,49 @@ class LLMResumer:
                         skills.update(exam.keys())
         prompt = ChatPromptTemplate.from_template(additional_skills_prompt_template)
         chain = prompt | self.llm_cheap | StrOutputParser()
-        output = chain.invoke({
+        input_data = {
             "languages": self.resume.languages,
             "interests": self.resume.interests,
             "skills": skills,
-        })
-        
+        }
+        if hasattr(self, "job_description"):
+            input_data["job_description"] = self.job_description
+        output = chain.invoke(input_data)
         return output
 
     def generate_html_resume(self) -> str:
-        # Define a list of functions to execute in parallel
         def header_fn():
-            if self.resume.personal_information and self.job_description:
+            if self.resume.personal_information:
                 return self.generate_header()
             return ""
 
         def education_fn():
-            if self.resume.education_details and self.job_description:
+            if self.resume.education_details:
                 return self.generate_education_section()
             return ""
 
         def work_experience_fn():
-            if self.resume.experience_details and self.job_description:
+            if self.resume.experience_details:
                 return self.generate_work_experience_section()
             return ""
 
         def side_projects_fn():
-            if self.resume.projects and self.job_description:
+            if self.resume.projects:
                 return self.generate_side_projects_section()
             return ""
 
         def achievements_fn():
-            if self.resume.achievements and self.job_description:
+            if self.resume.achievements:
                 return self.generate_achievements_section()
             return ""
-        
+
         def certifications_fn():
-            if self.resume.certifications and self.job_description:
+            if self.resume.certifications:
                 return self.generate_certifications_section()
             return ""
 
         def additional_skills_fn():
-            if (self.resume.experience_details or self.resume.education_details or
-                self.resume.languages or self.resume.interests) and self.job_description:
+            if self.resume.experience_details or self.resume.education_details or self.resume.languages or self.resume.interests:
                 return self.generate_additional_skills_section()
             return ""
 
@@ -364,7 +426,7 @@ class LLMResumer:
                     if result:
                         results[section] = result
                 except Exception as exc:
-                    print(f'{section} ha generato un\'eccezione: {exc}')
+                    logging.debug(f"{section} generated 1 exc: {exc}")
         full_resume = "<body>\n"
         full_resume += f"  {results.get('header', '')}\n"
         full_resume += "  <main>\n"

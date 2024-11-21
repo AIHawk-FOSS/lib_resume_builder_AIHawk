@@ -9,7 +9,7 @@ import webbrowser
 
 class FacadeManager:
     def __init__(self, api_key, style_manager, resume_generator, resume_object, log_path):
-        # Ottieni il percorso assoluto della directory della libreria
+        # Get absolute path of the library directory
         lib_directory = Path(__file__).resolve().parent
         global_config.STRINGS_MODULE_RESUME_PATH = lib_directory / "resume_prompt/strings_feder-cr.py"
         global_config.STRINGS_MODULE_RESUME_JOB_DESCRIPTION_PATH = lib_directory / "resume_job_description_prompt/strings_feder-cr.py"
@@ -21,7 +21,7 @@ class FacadeManager:
         self.style_manager.set_styles_directory(global_config.STYLES_DIRECTORY)
         self.resume_generator = resume_generator
         self.resume_generator.set_resume_object(resume_object)
-        self.selected_style = None  # Proprietà per memorizzare lo stile selezionato
+        self.selected_style = None  # Properties to store the selected style
 
     def prompt_user(self, choices: list[str], message: str) -> str:
         questions = [
@@ -58,14 +58,13 @@ class FacadeManager:
         else:
             self.selected_style = selected_choice.split(' (')[0]
 
-
     def pdf_base64(self, job_description_url=None, job_description_text=None):
-        if (job_description_url is not None and job_description_text is not None):
-            raise ValueError("Esattamente uno tra 'job_description_url' o 'job_description_text' deve essere fornito.")
-        
+        if job_description_url is not None and job_description_text is not None:
+            raise ValueError("Either 'job_description_url' or 'job_description_text' must be provided.")
+
         if self.selected_style is None:
-            raise ValueError("Devi scegliere uno stile prima di generare il PDF.")
-        
+            raise ValueError("You must choose a style before generating the PDF.")
+
         style_path = self.style_manager.get_style_path(self.selected_style)
 
         with tempfile.NamedTemporaryFile(delete=False, mode='w', suffix='.html', encoding='utf-8') as temp_html_file:

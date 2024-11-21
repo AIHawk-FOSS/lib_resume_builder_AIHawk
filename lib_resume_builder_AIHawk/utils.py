@@ -20,7 +20,7 @@ def create_driver_selenium():
     return webdriver.Chrome(service=service, options=options)
 
 def HTML_to_PDF(FilePath):
-    # Validazione e preparazione del percorso del file
+    # Validating and preparing the file path
     if not os.path.isfile(FilePath):
         raise FileNotFoundError(f"The specified file does not exist: {FilePath}")
     FilePath = f"file:///{os.path.abspath(FilePath).replace(os.sep, '/')}"
@@ -30,19 +30,19 @@ def HTML_to_PDF(FilePath):
         driver.get(FilePath)
         time.sleep(2)
         pdf_base64 = driver.execute_cdp_cmd("Page.printToPDF", {
-            "printBackground": True,         # Include lo sfondo nella stampa
-            "landscape": False,              # Stampa in verticale (False per ritratto)
-            "paperWidth": 8.27,              # Larghezza del foglio in pollici (A4)
-            "paperHeight": 11.69,            # Altezza del foglio in pollici (A4)
-            "marginTop": 0.8,                # Margine superiore in pollici (circa 2 cm)
-            "marginBottom": 0.8,             # Margine inferiore in pollici (circa 2 cm)
-            "marginLeft": 0.5,               # Margine sinistro in pollici (circa 2 cm)
-            "marginRight": 0.5,              # Margine destro in pollici (circa 2 cm)
-            "displayHeaderFooter": False,   # Non visualizzare intestazioni e piè di pagina
-            "preferCSSPageSize": True,       # Preferire le dimensioni della pagina CSS
-            "generateDocumentOutline": False, # Non generare un sommario del documento
-            "generateTaggedPDF": False,      # Non generare PDF taggato
-            "transferMode": "ReturnAsBase64" # Restituire il PDF come stringa base64
+            "printBackground": True,         # Includes background in print
+            "landscape": False,              # Vertical printing (False for portrait)
+            "paperWidth": 8.27,              # Paper width in inches (A4)
+            "paperHeight": 11.69,            # Paper height in inches (A4)
+            "marginTop": 0.8,                # Top margin in inches (approximately 2 cm)
+            "marginBottom": 0.8,             # Bottom margin in inches (approximately 2 cm)
+            "marginLeft": 0.5,               # Left margin in inches (approximately 2 cm)
+            "marginRight": 0.5,              # Right margin in inches (approximately 2 cm)
+            "displayHeaderFooter": False,    # Do not display headers and footers
+            "preferCSSPageSize": True,       # Prefer CSS page size
+            "generateDocumentOutline": False,# Do not generate a document summary
+            "generateTaggedPDF": False,      # Do not generate tagged PDF
+            "transferMode": "ReturnAsBase64" # Return the PDF as a base64 string
         })
         return pdf_base64['data']
     except WebDriverException as e:
@@ -52,32 +52,32 @@ def HTML_to_PDF(FilePath):
 
 def get_chrome_browser_options():
     options = webdriver.ChromeOptions()
-    options.add_argument("--start-maximized")  # Avvia il browser a schermo intero
-    options.add_argument("--no-sandbox")  # Disabilita la sandboxing per migliorare le prestazioni
-    options.add_argument("--disable-dev-shm-usage")  # Utilizza una directory temporanea per la memoria condivisa
-    options.add_argument("--ignore-certificate-errors")  # Ignora gli errori dei certificati SSL
-    options.add_argument("--disable-extensions")  # Disabilita le estensioni del browser
-    options.add_argument("--disable-gpu")  # Disabilita l'accelerazione GPU
-    options.add_argument("window-size=1200x800")  # Imposta la dimensione della finestra del browser
-    options.add_argument("--disable-background-timer-throttling")  # Disabilita il throttling dei timer in background
-    options.add_argument("--disable-backgrounding-occluded-windows")  # Disabilita la sospensione delle finestre occluse
-    options.add_argument("--disable-translate")  # Disabilita il traduttore automatico
-    options.add_argument("--disable-popup-blocking")  # Disabilita il blocco dei popup
-    #options.add_argument("--disable-features=VizDisplayCompositor")  # Disabilita il compositore di visualizzazione
-    options.add_argument("--no-first-run")  # Disabilita la configurazione iniziale del browser
-    options.add_argument("--no-default-browser-check")  # Disabilita il controllo del browser predefinito
-    options.add_argument("--single-process")  # Esegui Chrome in un solo processo
-    options.add_argument("--disable-logging")  # Disabilita il logging
-    options.add_argument("--disable-autofill")  # Disabilita l'autocompletamento dei moduli
-    #options.add_argument("--disable-software-rasterizer")  # Disabilita la rasterizzazione software
-    options.add_argument("--disable-plugins")  # Disabilita i plugin del browser
-    options.add_argument("--disable-animations")  # Disabilita le animazioni
-    options.add_argument("--disable-cache")  # Disabilita la cache
+    options.add_argument("--start-maximized")  # Start the browser in full screen
+    options.add_argument("--no-sandbox")  # Disable sandboxing to improve performance
+    options.add_argument("--disable-dev-shm-usage")  # Use a temporary directory for shared memory
+    options.add_argument("--ignore-certificate-errors")  # Ignore SSL certificate errors
+    options.add_argument("--disable-extensions")  # Disable browser extensions
+    options.add_argument("--disable-gpu")  # Disable GPU acceleration
+    options.add_argument("window-size=1200x800")  # Set the browser window size
+    options.add_argument("--disable-background-timer-throttling")  # Disable background timer throttling
+    options.add_argument("--disable-backgrounding-occluded-windows")  # Disable backgrounding of occluded windows
+    options.add_argument("--disable-translate")  # Disable automatic translation
+    options.add_argument("--disable-popup-blocking")  # Disable popup blocking
+    #options.add_argument("--disable-features=VizDisplayCompositor")  # Disable the Viz display compositor
+    options.add_argument("--no-first-run")  # Disable the initial browser setup
+    options.add_argument("--no-default-browser-check")  # Disable the default browser check
+    options.add_argument("--single-process")  # Run Chrome in a single process
+    options.add_argument("--disable-logging")  # Disable logging
+    options.add_argument("--disable-autofill")  # Disable form autofill
+    #options.add_argument("--disable-software-rasterizer")  # Disable software rasterizer
+    options.add_argument("--disable-plugins")  # Disable browser plugins
+    options.add_argument("--disable-animations")  # Disable animations
+    options.add_argument("--disable-cache")  # Disable cache
     #options.add_argument('--proxy-server=localhost:8081')
-    #options.add_experimental_option("useAutomationExtension", False)  # Disabilita l'estensione di automazione di Chrome
-    options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])  # Esclude switch della modalità automatica e logging
+    #options.add_experimental_option("useAutomationExtension", False)  # Disable Chrome automation extension
+    options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])  # Exclude automation and logging switches
 
-    options.add_argument("--single-process")  # Esegui Chrome in un solo processo
+    options.add_argument("--single-process")  # Run Chrome in a single process
     return options
 
 def printred(text):
