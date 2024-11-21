@@ -36,7 +36,7 @@ class ExperienceDetails(BaseModel):
     employment_period: Optional[str]
     location: Optional[str]
     industry: Optional[str]
-    key_responsibilities: Optional[List[Dict[str, str]]] = None
+    key_responsibilities: Optional[List[str]] = None
     skills_acquired: Optional[List[str]] = None
 
 
@@ -162,7 +162,7 @@ class Resume(BaseModel):
         for exp in data:
             try:
                 key_responsibilities = [
-                    Responsibility(description=list(resp.values())[0])
+                    Responsibility(description=resp)
                     for resp in exp.get('key_responsibilities', [])
                 ]
                 skills_acquired = [str(skill) for skill in exp.get('skills_acquired', [])]

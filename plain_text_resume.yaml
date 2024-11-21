@@ -34,9 +34,9 @@ experience_details:
     location: "Italy"
     industry: "Blockchain Technology"
     key_responsibilities:
-      - responsibility_1:  "Co-founded and led a startup specializing in app and software development with a focus on blockchain technology"
-      - responsibility_2:  "Provided blockchain consultations for 10+ companies, enhancing their software capabilities with secure, decentralized solutions"
-      - responsibility_3: "Developed blockchain applications, integrated cutting-edge technology to meet client needs and drive industry innovation"
+      -  "Co-founded and led a startup specializing in app and software development with a focus on blockchain technology"
+      -  "Provided blockchain consultations for 10+ companies, enhancing their software capabilities with secure, decentralized solutions"
+      - "Developed blockchain applications, integrated cutting-edge technology to meet client needs and drive industry innovation"
     skills_acquired:
       - "Blockchain development"
       - "Software engineering"
@@ -48,10 +48,10 @@ experience_details:
     location: "Genoa, Italy"
     industry: "IoT Security Research"
     key_responsibilities:
-      - responsibility_1:  "Conducted in-depth research on IoT security, focusing on binary instrumentation and runtime monitoring"
-      - responsibility_2:  "Performed in-depth study of the MQTT protocol and Falco"
-      - responsibility_3:  "Developed multiple software components including MQTT packet analysis library, Falco adapter, and RML monitor in Prolog"
-      - responsibility_4: "Authored thesis 'Binary Instrumentation for Runtime Monitoring of Internet of Things Systems Using Falco'"
+      -  "Conducted in-depth research on IoT security, focusing on binary instrumentation and runtime monitoring"
+      -  "Performed in-depth study of the MQTT protocol and Falco"
+      -  "Developed multiple software components including MQTT packet analysis library, Falco adapter, and RML monitor in Prolog"
+      - "Authored thesis 'Binary Instrumentation for Runtime Monitoring of Internet of Things Systems Using Falco'"
     skills_acquired:
       - "IoT security"
       - "Binary instrumentation"
@@ -64,9 +64,9 @@ experience_details:
     location: "Genoa, Italy"
     industry: "Healthcare IT"
     key_responsibilities:
-      - responsibility_1: "Integrated and enforced robust security protocols"
-      - responsibility_2:  "Developed and maintained a critical software tool for password validation used by over 1,600 employees"
-      - responsibility_3:  "Played an integral role in the hospital's cybersecurity team"
+      - "Integrated and enforced robust security protocols"
+      -  "Developed and maintained a critical software tool for password validation used by over 1,600 employees"
+      -  "Played an integral role in the hospital's cybersecurity team"
     skills_acquired:
       - "Cybersecurity"
       - "Software development"
